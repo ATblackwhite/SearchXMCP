@@ -35,6 +35,10 @@ def test_build_server_tool_payload_includes_x_search_filter():
     assert search_filter["to_date"] == "2026-04-19"
     assert search_filter["allowed_x_handles"] == ["OpenAI"]
     assert search_filter["enable_image_understanding"] is True
+    prompt = payload["messages"][1]["content"]
+    assert "Simplified Chinese" in prompt
+    assert "materially important within the target domain" in prompt
+    assert "importance_reason" in prompt
 
 
 def test_build_plugin_payload():
@@ -43,6 +47,14 @@ def test_build_plugin_payload():
     assert "tools" not in payload
     assert payload["plugins"][0]["id"] == "web"
     assert payload["plugins"][0]["x_search_filter"]["from_date"] == "2026-04-19"
+
+
+def test_system_message_requires_chinese_high_signal_results():
+    request = SearchRequest(query="robotics", output_dir="screens")
+    payload = build_payload(request, today=date(2026, 4, 19))
+    system_message = payload["messages"][0]["content"]
+    assert "high-importance updates" in system_message
+    assert "Simplified Chinese" in system_message
 
 
 def test_handle_filters_are_mutually_exclusive():

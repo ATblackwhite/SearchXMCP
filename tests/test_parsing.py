@@ -33,13 +33,14 @@ def test_extract_tweet_urls_deduplicates():
 
 def test_parse_json_tweets():
     content = """```json
-    {"tweets":[{"text":"hello","url":"https://x.com/OpenAI/status/42","author_handle":"OpenAI","posted_at":"2026-04-19"}]}
+    {"tweets":[{"text":"OpenAI发布重要更新","url":"https://x.com/OpenAI/status/42","author_handle":"OpenAI","posted_at":"2026-04-19","importance_reason":"这是官方发布"}]}
     ```"""
     tweets = parse_tweets_from_content(content, 5)
     assert len(tweets) == 1
-    assert tweets[0].text == "hello"
+    assert tweets[0].text == "OpenAI发布重要更新"
     assert tweets[0].url == "https://x.com/OpenAI/status/42"
     assert tweets[0].author_handle == "OpenAI"
+    assert tweets[0].importance_reason == "这是官方发布"
 
 
 def test_parse_markdown_tweets():

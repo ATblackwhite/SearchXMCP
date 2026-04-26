@@ -76,6 +76,7 @@ class TweetResult(BaseModel):
     url: str
     author_handle: str | None = None
     posted_at: str | None = None
+    importance_reason: str | None = None
     screenshot_path: str | None = None
     screenshot_status: Literal["pending", "success", "failed", "skipped"] = "pending"
     error: str | None = None

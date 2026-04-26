@@ -85,14 +85,21 @@ def build_prompt(request: SearchRequest, from_date: str, to_date: str) -> str:
             "You are an X/Twitter search assistant.",
             "Use web search to find real, current X/Twitter posts.",
             f"Search query: {request.query}",
+            "Treat the search query as the target domain, industry, company, technology, or topic.",
             f"Date range: {from_date} to {to_date}.",
             f"Return up to {request.max_results} real posts.",
             handle_instruction,
+            "Only return posts that are materially important within the target domain.",
+            "Prioritize official announcements, launches, releases, incidents, outages, funding, partnerships, policy or regulatory changes, executive statements, major research breakthroughs, and other high-signal updates.",
+            "Prefer posts from official accounts, founders, executives, product teams, major researchers, regulators, or other authoritative first-hand sources.",
+            "Exclude routine chatter, low-signal commentary, memes, generic opinions, reposts without new facts, and minor updates with little impact.",
             "Every result must include the exact tweet/post URL from x.com or twitter.com.",
             "Do not invent links, authors, dates, or tweet text.",
             "Prefer direct /status/ URLs. Exclude profile pages, search pages, news articles, and non-X pages.",
-            "Return concise JSON if possible with this shape: {\"tweets\":[{\"text\":\"...\",\"url\":\"https://x.com/user/status/id\",\"author_handle\":\"user\",\"posted_at\":\"...\"}]}",
-            "If JSON is not possible, return one numbered item per tweet with text, author, date, and direct URL.",
+            "Write the returned tweet text as a concise Simplified Chinese summary of the post's key message. Do not translate or modify the screenshot target page itself.",
+            "If the original post is not Chinese, still return the text field in Simplified Chinese.",
+            "Return concise JSON if possible with this shape: {\"tweets\":[{\"text\":\"中文摘要\",\"url\":\"https://x.com/user/status/id\",\"author_handle\":\"user\",\"posted_at\":\"...\",\"importance_reason\":\"这条消息为何重要\"}]}",
+            "If JSON is not possible, return one numbered item per tweet with a Chinese summary, author, date, direct URL, and why it matters.",
             " ".join(media_instruction),
         ]
         if line
@@ -111,7 +118,14 @@ def build_payload(
     payload: dict[str, Any] = {
         "model": model,
         "messages": [
-            {"role": "system", "content": "You have access to web search. Use it to find current X/Twitter posts."},
+            {
+                "role": "system",
+                "content": (
+                    "You have access to web search. "
+                    "Use it to find current X/Twitter posts, prefer high-importance updates, "
+                    "and write returned summaries in Simplified Chinese."
+                ),
+            },
             {"role": "user", "content": prompt},
         ],
         "max_tokens": 4000,

@@ -110,6 +110,10 @@ def parse_tweets_from_content(content: str, max_results: int) -> list[TweetResul
                     url=normalized.url,
                     author_handle=(str(item.get("author_handle") or item.get("handle") or normalized.handle).lstrip("@") or None),
                     posted_at=str(item.get("posted_at") or item.get("date") or "") or None,
+                    importance_reason=_clean_text(
+                        str(item.get("importance_reason") or item.get("why_important") or item.get("reason") or "")
+                    )
+                    or None,
                 )
             )
             seen.add(normalized.url)

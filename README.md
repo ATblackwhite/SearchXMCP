@@ -2,6 +2,8 @@
 
 Python stdio MCP server that searches X/Twitter with OpenRouter `x-ai/grok-4.1-fast`, extracts tweet links, opens each tweet with Playwright, saves screenshots, and returns Grok text plus screenshot paths.
 
+The returned `tweets[].text` is designed to be a Simplified Chinese summary, while screenshots keep the original post content unchanged. The search prompt also prioritizes high-signal, important updates within the requested domain instead of routine chatter.
+
 ## Setup
 
 ```powershell
@@ -68,6 +70,7 @@ Output includes:
 
 - `query`, `model`, `output_dir`, `raw_grok_content`.
 - `tweets[]` with `text`, `url`, `author_handle`, `posted_at`, `screenshot_path`, `screenshot_status`, `error`.
+- `tweets[].text` should be a Chinese summary of the post content, and `importance_reason` explains why the post matters in the requested domain.
 - `usage`, if returned by OpenRouter.
 
 ## Notes

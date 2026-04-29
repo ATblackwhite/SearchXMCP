@@ -6,11 +6,14 @@ from x_tweet_screenshot_mcp.screenshots import add_screenshots
 
 
 def test_add_screenshots_uses_best_effort(monkeypatch, tmp_path: Path):
-    async def fake_screenshot(url, output_path):
-        output_path.write_bytes(b"fake png")
-        return "success", None
+    async def fake_capture(prepared):
+        for tweet, _, output_path in prepared:
+            output_path.write_bytes(b"fake png")
+            tweet.screenshot_path = str(output_path)
+            tweet.screenshot_status = "success"
+            tweet.error = None
 
-    monkeypatch.setattr("x_tweet_screenshot_mcp.screenshots.screenshot_tweet_url", fake_screenshot)
+    monkeypatch.setattr("x_tweet_screenshot_mcp.screenshots.capture_prepared_screenshots", fake_capture)
     request = SearchRequest(query="ai", output_dir=str(tmp_path), create_run_subdir=False)
     tweets = [TweetResult(text="hello", url="https://twitter.com/OpenAI/status/123")]
 

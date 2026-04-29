@@ -13,6 +13,9 @@ if TYPE_CHECKING:
 
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_TIMEOUT_SECONDS = 45.0
+OPENROUTER_CONNECT_TIMEOUT_SECONDS = 10.0
+OPENROUTER_MAX_TOKENS = 1800
 SEARCH_ERROR_HINTS = (
     "x_search_filter",
     "openrouter:web_search",
@@ -128,7 +131,7 @@ def build_payload(
             },
             {"role": "user", "content": prompt},
         ],
-        "max_tokens": 4000,
+        "max_tokens": OPENROUTER_MAX_TOKENS,
     }
 
     x_search_filter: dict[str, Any] = {
@@ -206,7 +209,9 @@ async def search_with_openrouter(
 
     key = api_key or get_openrouter_api_key()
     close_client = client is None
-    http_client = client or httpx.AsyncClient(timeout=httpx.Timeout(90.0, connect=20.0))
+    http_client = client or httpx.AsyncClient(
+        timeout=httpx.Timeout(OPENROUTER_TIMEOUT_SECONDS, connect=OPENROUTER_CONNECT_TIMEOUT_SECONDS)
+    )
 
     try:
         last_error: OpenRouterError | None = None

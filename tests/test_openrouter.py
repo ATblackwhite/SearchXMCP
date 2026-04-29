@@ -3,7 +3,7 @@ from datetime import date
 import pytest
 
 from x_tweet_screenshot_mcp.models import SearchRequest
-from x_tweet_screenshot_mcp.openrouter import build_date_range, build_payload, should_fallback
+from x_tweet_screenshot_mcp.openrouter import OPENROUTER_MAX_TOKENS, build_date_range, build_payload, should_fallback
 
 
 def test_build_date_range_single_day():
@@ -36,6 +36,7 @@ def test_build_server_tool_payload_includes_x_search_filter():
     assert search_filter["allowed_x_handles"] == ["OpenAI"]
     assert search_filter["enable_image_understanding"] is True
     prompt = payload["messages"][1]["content"]
+    assert payload["max_tokens"] == OPENROUTER_MAX_TOKENS
     assert "Simplified Chinese" in prompt
     assert "materially important within the target domain" in prompt
     assert "importance_reason" in prompt

@@ -24,8 +24,10 @@ SCREENSHOT_TIMEOUT_MS = 15_000
 NETWORK_IDLE_TIMEOUT_MS = 3_000
 BODY_TEXT_TIMEOUT_MS = 2_000
 SCROLL_TIMEOUT_MS = 3_000
+ARTICLE_READY_TIMEOUT_MS = 8_000
+RENDER_SETTLE_TIMEOUT_MS = 1_200
 ARTICLE_SCREENSHOT_TIMEOUT_MS = 8_000
-SCREENSHOT_CONCURRENCY = 3
+SCREENSHOT_CONCURRENCY = 2
 
 
 def prepare_output_dir(request: SearchRequest) -> Path:
@@ -65,7 +67,10 @@ async def screenshot_tweet_page(page: Any, url: str, output_path: Path, timeout_
         locator = page.locator("article, [data-testid=tweet], [data-testid=post]").first
         if await locator.count():
             try:
+                await locator.wait_for(state="visible", timeout=ARTICLE_READY_TIMEOUT_MS)
                 await locator.scroll_into_view_if_needed(timeout=SCROLL_TIMEOUT_MS)
+                # X often inserts the tweet shell before the text/media finish rendering.
+                await page.wait_for_timeout(RENDER_SETTLE_TIMEOUT_MS)
                 await locator.screenshot(path=str(output_path), timeout=ARTICLE_SCREENSHOT_TIMEOUT_MS)
                 return "success", None
             except PlaywrightError as exc:

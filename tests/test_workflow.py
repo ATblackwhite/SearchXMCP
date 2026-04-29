@@ -3,7 +3,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from x_tweet_screenshot_mcp.models import SearchRequest, TweetResult
-from x_tweet_screenshot_mcp.screenshots import add_screenshots, screenshot_tweet_page
+from x_tweet_screenshot_mcp.screenshots import add_screenshots, get_screenshot_proxy, screenshot_tweet_page
 
 
 def test_add_screenshots_uses_best_effort(monkeypatch, tmp_path: Path):
@@ -27,12 +27,21 @@ def test_add_screenshots_uses_best_effort(monkeypatch, tmp_path: Path):
     assert Path(result[0].screenshot_path).exists()
 
 
+def test_get_screenshot_proxy_normalizes_env_value(monkeypatch):
+    for key in ("X_SCREENSHOT_PROXY", "HTTPS_PROXY", "HTTP_PROXY", "ALL_PROXY"):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("X_SCREENSHOT_PROXY", "127.0.0.1:7890")
+
+    assert get_screenshot_proxy() == "http://127.0.0.1:7890"
+
+
 def test_screenshot_tweet_page_waits_for_visible_article_and_settles(tmp_path: Path):
     class FakeLocator:
         def __init__(self):
             self.waited_for = None
             self.scrolled = False
             self.screenshot_taken = False
+            self.content_waited_for = None
 
         async def count(self):
             return 1
@@ -40,12 +49,22 @@ def test_screenshot_tweet_page_waits_for_visible_article_and_settles(tmp_path: P
         async def wait_for(self, state, timeout):
             self.waited_for = (state, timeout)
 
+        def locator(self, query):
+            return SimpleNamespace(first=FakeContentLocator(self))
+
         async def scroll_into_view_if_needed(self, timeout):
             self.scrolled = True
 
         async def screenshot(self, path, timeout):
             self.screenshot_taken = True
             Path(path).write_bytes(b"fake png")
+
+    class FakeContentLocator:
+        def __init__(self, parent):
+            self.parent = parent
+
+        async def wait_for(self, state, timeout):
+            self.parent.content_waited_for = (state, timeout)
 
     class FakeBodyLocator:
         async def inner_text(self, timeout):
@@ -85,6 +104,8 @@ def test_screenshot_tweet_page_waits_for_visible_article_and_settles(tmp_path: P
     assert error is None
     assert article_locator.waited_for is not None
     assert article_locator.waited_for[0] == "visible"
+    assert article_locator.content_waited_for is not None
+    assert article_locator.content_waited_for[0] == "visible"
     assert article_locator.scrolled is True
     assert page.waited_for_timeout_ms is not None
     assert article_locator.screenshot_taken is True
